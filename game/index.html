@@ -1,96 +1,163 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vela Mar — Countdown Getaway</title>
-<link rel="icon" href="data:,">
-<link rel="stylesheet" href="./styles.css">
-<script type="importmap">
-{"imports": {"three": "./vendor/three.module.min.js"}}
-</script>
+<title>Verdeluz: Witness City</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<canvas id="view" aria-label="Vela Mar open world game view"></canvas>
+<canvas id="game"></canvas>
 
-<div id="hud" class="hidden">
-  <div id="topLeft">
-    <div id="cashBox">$<span id="cash">0</span></div>
-    <div id="repBox">REP <span id="rep">0</span> &nbsp;•&nbsp; <span id="clock">22:00</span> &nbsp;•&nbsp; SUNRISE <span id="countdown">08:00:00</span></div>
-    <div id="tokenBox">FESTIVAL TOKENS <span id="tokens">0</span>/8</div>
+<!-- ============ HUD ============ -->
+<div id="hud" style="display:none">
+  <div id="hud-topleft">
+    <div class="bar-row"><span class="bar-label">HP</span><div class="bar"><div id="health-fill"></div></div></div>
+    <div class="bar-row"><span class="bar-label">ARMOR</span><div class="bar"><div id="armor-fill"></div></div></div>
+    <div id="cash-row"><span id="cash">$120</span><span id="clock">☀ 09:30</span></div>
+    <div id="district-label">Marina District</div>
   </div>
-  <div id="topRight">
-    <div id="stars" aria-label="wanted level"></div>
-    <div id="wantedLabel">VELA MAR POLICE</div>
-  </div>
-  <div id="banner" class="hidden"><span id="bannerTitle"></span><span id="bannerSub"></span></div>
-  <div id="dialogue" class="hidden"><span id="dialogueName"></span><span id="dialogueText"></span><span id="dialogueHint">E / CLICK to continue</span></div>
-  <div id="feed"></div>
-  <div id="bottomLeft">
-    <div id="healthBar"><div id="healthFill"></div><span id="healthText">100</span></div>
-    <div id="ammoBox">PISTOL <span id="ammo">12</span> • MELEE [F] • RELOAD [R]</div>
-    <div id="vehicleBox" class="hidden"><span id="vehicleName"></span> • <span id="speed">0</span> KM/H • NITRO [SHIFT]</div>
-  </div>
-  <div id="bottomRight">
-    <canvas id="minimap" width="190" height="190"></canvas>
-    <div id="zoneLabel">MARINA LUZ</div>
-  </div>
-  <div id="help">WASD MOVE / DRIVE • MOUSE CAMERA • E ENTER / STEAL CAR • CLICK SHOOT • F PUNCH • SHIFT SPRINT / NITRO • M SOUND • P SAVE • ESC PAUSE</div>
-  <div id="interact" class="hidden"></div>
-</div>
-<div id="vignette" class="hidden"></div>
-<div id="fadeBlack"></div>
 
-<div id="startMenu" class="overlay">
-  <div class="panel">
-    <div class="kicker">LUMEN FEST • LAUNCH EVE • ONE NIGHT ONLY</div>
-    <h1>VELA MAR</h1>
-    <div class="subtitle">COUNTDOWN GETAWAY — 5 JOBS BEFORE SUNRISE</div>
-    <p class="story">Ria Calloway came to Vela Mar to work the festival lights. One borrowed car later, fixer Delia Voss owns her night: five jobs across four districts before sunrise — or the police get the footage first. Steal cars, outrun the heat, settle the dockside score, and make the last getaway count.</p>
-    <div class="controlsGrid">
-      <span>WASD</span><span>Walk / drive</span>
-      <span>MOUSE</span><span>Camera (click to lock)</span>
-      <span>E</span><span>Enter, steal &amp; exit cars</span>
-      <span>CLICK / F</span><span>Shoot / punch</span>
-      <span>SHIFT</span><span>Sprint / nitro</span>
-      <span>P / M</span><span>Save game / sound</span>
+  <div id="hud-topright">
+    <div id="stars"></div>
+    <div id="wanted-label" class="wanted-clean">CLEAN</div>
+    <span id="evade-tag">EVADING…</span>
+    <div id="hud-buttons">
+      <button id="btn-feed" class="hud-btn" title="Chatter feed (Tab)">💬 Chatter <span id="feed-badge"></span></button>
+      <button id="btn-station" class="hud-btn" title="Next radio station (N)">📻</button>
+      <button id="btn-mute" class="hud-btn" title="Mute (M)">🔊</button>
+      <button id="btn-pause" class="hud-btn" title="Pause (Esc)">⏸</button>
     </div>
-    <button id="btnStart" class="bigBtn">START THE NIGHT</button>
-    <button id="btnContinue" class="bigBtn hidden">CONTINUE — SAVED GAME</button>
-    <div class="foot">An original open-world crime game. Own city, characters, story, art and music. No network needed — runs fully offline.</div>
+  </div>
+
+  <div id="objective"></div>
+  <div id="mission-timer"></div>
+
+  <div id="banner"><div id="banner-main"></div><div id="banner-sub"></div></div>
+
+  <div id="hud-bottomleft">
+    <div id="weapon-row"><span id="weapon-name">Pistol</span><span id="ammo-count">120</span></div>
+    <div id="station-name">♪ SOL FM · Sunset Drive</div>
+    <div id="controls-hint">WASD move · Mouse aim · Click shoot · F enter car · E interact · Q weapon · R reload</div>
+  </div>
+
+  <div id="minimap-wrap"><canvas id="minimap" width="180" height="180"></canvas><div id="minimap-caption">VERDELUZ</div></div>
+
+  <div id="prompt"></div>
+  <div id="toasts"></div>
+  <div id="save-flash">✔ SAVED</div>
+</div>
+
+<!-- ============ Chatter feed ============ -->
+<div id="feed-panel" style="display:none">
+  <div id="feed-head"><span>💬 CHATTER — Verdeluz live</span><button id="feed-close">✕</button></div>
+  <div id="feed-list"></div>
+</div>
+
+<!-- ============ Start screen ============ -->
+<div id="overlay-start" class="overlay">
+  <div class="panel title-panel">
+    <div class="title-kicker">A WITNESS-CITY STORY</div>
+    <h1>VERDELUZ</h1>
+    <div class="title-sub">WITNESS CITY</div>
+    <p class="title-story">Mara Voss came home to bury the past. The city had other plans.
+    In Verdeluz, a crime only counts if someone <b>sees</b> it — a pedestrian, a cop,
+    a camera. Stay unseen, and you are a ghost. Get witnessed, and the whole
+    force comes running.</p>
+    <div class="title-buttons">
+      <button id="btn-new" class="big-btn">▶ NEW GAME</button>
+      <button id="btn-continue" class="big-btn alt">↻ CONTINUE</button>
+      <button id="btn-help-start" class="big-btn alt">? CONTROLS</button>
+    </div>
+    <div id="help-panel" style="display:none">
+      <h3>CONTROLS</h3>
+      <div class="help-grid">
+        <span>W A S D / Arrows</span><span>Move / drive</span>
+        <span>Mouse</span><span>Aim (on foot)</span>
+        <span>Left click</span><span>Shoot / punch</span>
+        <span>F</span><span>Enter / exit car</span>
+        <span>E</span><span>Interact / talk / help</span>
+        <span>Q / Wheel / 1–4</span><span>Switch weapon</span>
+        <span>R</span><span>Reload</span>
+        <span>Space</span><span>Handbrake</span>
+        <span>H</span><span>Horn</span>
+        <span>Shift</span><span>Run</span>
+        <span>Tab</span><span>Chatter feed</span>
+        <span>N</span><span>Next radio station</span>
+        <span>M</span><span>Mute</span>
+        <span>Esc / P</span><span>Pause</span>
+      </div>
+      <p class="help-note">Witness rule: crimes seen by people or CCTV get reported after a short delay —
+      the witness flashes <b style="color:#ff6b6b">!</b>. Break line of sight, hide, or visit Rosa's Garage
+      for a respray to clear your heat. Kindness is remembered too: help stranded drivers.</p>
+    </div>
+    <div class="settings-row">
+      <label>Volume <input id="volume-range" type="range" min="0" max="100" value="70"></label>
+      <label><input id="mute-check" type="checkbox"> Muted</label>
+    </div>
+    <div class="title-foot">An original open-world story. No real city, no real people. All sound synthesized live.</div>
   </div>
 </div>
 
-<div id="pauseMenu" class="overlay hidden">
+<!-- ============ Pause ============ -->
+<div id="overlay-pause" class="overlay" style="display:none">
   <div class="panel">
-    <h1>PAUSED</h1>
-    <div class="subtitle" id="pauseStats"></div>
-    <button id="btnResume" class="bigBtn">RESUME</button>
-    <button id="btnSave" class="bigBtn">SAVE GAME</button>
-    <button id="btnQuality" class="bigBtn">QUALITY: HIGH</button>
-    <button id="btnRestart" class="bigBtn">RESTART NIGHT</button>
-    <div class="foot">Progress saves to this browser only.</div>
+    <h2>PAUSED</h2>
+    <div id="profile-panel"></div>
+    <div class="title-buttons">
+      <button id="btn-resume" class="big-btn">▶ RESUME</button>
+      <button id="btn-save-pause" class="big-btn alt">💾 SAVE GAME</button>
+      <button id="btn-quit-title" class="big-btn alt">🏠 TITLE SCREEN</button>
+    </div>
   </div>
 </div>
 
-<div id="bustedScreen" class="overlay hidden">
-  <div class="panel alert">
-    <h1>BUSTED</h1>
-    <p class="story">The Vela Mar police boxed you in. Delia paid the fine out of your cut — the night goes on, but the footage stays with her.</p>
-    <button id="btnBusted" class="bigBtn">BACK TO THE STREETS (−$150)</button>
+<!-- ============ Briefing ============ -->
+<div id="overlay-briefing" class="overlay" style="display:none">
+  <div class="panel">
+    <h2 id="briefing-title">Mission</h2>
+    <div id="briefing-lines"></div>
+    <div class="title-buttons">
+      <button id="briefing-start" class="big-btn">▶ START MISSION</button>
+      <button id="briefing-cancel" class="big-btn alt">NOT YET</button>
+    </div>
   </div>
 </div>
 
-<div id="wastedScreen" class="overlay hidden">
-  <div class="panel alert">
-    <h1>DOWN, NOT OUT</h1>
-    <p class="story">Ria wakes at the marina clinic with the festival still thumping. The jobs are still waiting.</p>
-    <button id="btnWasted" class="bigBtn">GET UP (−$100)</button>
+<!-- ============ Wasted ============ -->
+<div id="overlay-dead" class="overlay" style="display:none">
+  <div class="panel dead-panel">
+    <h1 class="dead-title">WASTED</h1>
+    <p>Mara wakes up at the apartment, $50 lighter. Verdeluz is not done with her yet.</p>
+    <div class="title-buttons"><button id="btn-respawn-dead" class="big-btn">↻ BACK TO THE STREETS</button></div>
   </div>
 </div>
 
-<div id="splash" class="hidden"><div id="splashTitle"></div><div id="splashSub"></div></div>
+<!-- ============ Busted ============ -->
+<div id="overlay-busted" class="overlay" style="display:none">
+  <div class="panel dead-panel">
+    <h1 class="dead-title busted-title">BUSTED</h1>
+    <p>The VPD holds Mara overnight and takes 15% of her cash. The garage bails her out by morning.</p>
+    <div class="title-buttons"><button id="btn-respawn-busted" class="big-btn">↻ BACK TO THE STREETS</button></div>
+  </div>
+</div>
 
-<script type="module" src="./src/main.js"></script>
+<!-- ============ Ending ============ -->
+<div id="overlay-ending" class="overlay" style="display:none">
+  <div class="panel">
+    <div class="title-kicker">THE LONG EXPOSURE — COMPLETE</div>
+    <h2>VANE IS FINISHED.</h2>
+    <p>The ledger, the drive, and a city full of witnesses. Councilman Vane's empire
+    unravels on every screen in Verdeluz — and Mara Voss, the ghost the cameras
+    could never quite catch, drives off into the golden hour.</p>
+    <p id="ending-stats"></p>
+    <div class="title-buttons"><button id="btn-keep-playing" class="big-btn">▶ KEEP EXPLORING VERDELUZ</button></div>
+  </div>
+</div>
+
+<div id="selftest" style="display:none"></div>
+<div id="center-msg"></div>
+
+<script type="module" src="src/main.js"></script>
 </body>
 </html>

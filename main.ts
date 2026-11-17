@@ -1,40 +1,93 @@
-// Vela Mar — Countdown Getaway: entry program for make.fun gta6-01.
-// Node 22, standard library only. It takes no arguments and finds its own
-// inputs: the game/ and screenshots/ folders beside this file. It copies
-// both into the output directory and writes the dossier with the kit's
-// vendored library, exactly as the grader expects.
+// Verdeluz: Witness City — entry point.
 //
-// Local check (MAKEFUN_OUTPUT_DIR stands in for /output outside the grader):
-//   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+// The grader runs this file with no arguments, from an arbitrary clean
+// working directory, under Node 22 with only the standard library. It
+// locates its own repository root from this file's URL (never from the
+// working directory), copies game/ and screenshots/ into the output
+// directory, and writes dossier.json via the vendored buildDossier.
+//
+// Outside the grader, MAKEFUN_OUTPUT_DIR stands in for /output.
 
-import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-game.ts';
 
-const repoRoot = fileURLToPath(new URL('.', import.meta.url));
-const outputDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+const CAPS = {
+  text_max_bytes: 163840,
+  screenshots: { max: 4, max_bytes: 262144 },
+  game_max_files: 993,
+  game_max_bytes: 50331648,
+  game_path_max_bytes: 1000,
+};
 
-// Fail fast on a bad checkout instead of writing a partial dossier: the
-// grader runs this program with no arguments and no second chance.
-if (!existsSync(join(repoRoot, 'game', 'index.html'))) {
-  throw new Error('Vela Mar entry is incomplete: game/index.html is missing beside main.ts');
+function fail(message) {
+  console.error('main.ts: ' + message);
+  process.exit(1);
 }
 
-mkdirSync(outputDir, { recursive: true });
-cpSync(join(repoRoot, 'game'), join(outputDir, 'game'), { recursive: true });
-mkdirSync(join(outputDir, 'screenshots'), { recursive: true });
-if (existsSync(join(repoRoot, 'screenshots'))) {
-  cpSync(join(repoRoot, 'screenshots'), join(outputDir, 'screenshots'), { recursive: true });
+function countEntries(root) {
+  let files = 0;
+  let bytes = 0;
+  const walk = (dir) => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      const st = statSync(full);
+      if (st.isDirectory()) walk(full);
+      else {
+        files += 1;
+        bytes += st.size;
+      }
+    }
+  };
+  walk(root);
+  return { files, bytes };
 }
 
-writeFileSync(
-  join(outputDir, 'dossier.json'),
-  buildDossier(outputDir, {
-    text_max_bytes: 163840,
-    screenshots: { max: 4, max_bytes: 262144 },
-    game_max_files: 993,
-    game_max_bytes: 50331648,
-    game_path_max_bytes: 1000,
-  }),
-);
+function main() {
+  const repoRoot = dirname(fileURLToPath(import.meta.url));
+  const gameDir = join(repoRoot, 'game');
+  const shotsDir = join(repoRoot, 'screenshots');
+  const outDir = process.env.MAKEFUN_OUTPUT_DIR || '/output';
+
+  if (!existsSync(join(gameDir, 'index.html'))) {
+    fail('game/index.html not found under ' + repoRoot);
+  }
+  if (!existsSync(shotsDir)) {
+    fail('screenshots/ not found under ' + repoRoot);
+  }
+  const shots = readdirSync(shotsDir).filter((n) => /\.(png|jpe?g)$/i.test(n));
+  if (shots.length < 3 || shots.length > 4) {
+    fail('expected 3-4 screenshots, found ' + shots.length);
+  }
+
+  mkdirSync(outDir, { recursive: true });
+  // Clear any stale output from an earlier run so a re-run can never
+  // hand in files this entry no longer has.
+  rmSync(join(outDir, 'game'), { recursive: true, force: true });
+  rmSync(join(outDir, 'screenshots'), { recursive: true, force: true });
+  rmSync(join(outDir, 'dossier.json'), { force: true });
+  cpSync(gameDir, join(outDir, 'game'), { recursive: true });
+  cpSync(shotsDir, join(outDir, 'screenshots'), { recursive: true });
+
+  const dossier = buildDossier(outDir, CAPS);
+  writeFileSync(join(outDir, 'dossier.json'), dossier);
+
+  // Verify the written dossier round-trips and names every screenshot.
+  const parsed = JSON.parse(readFileSync(join(outDir, 'dossier.json'), 'utf8'));
+  if (parsed.schema !== 'makefun/dossier/v1') {
+    fail('dossier schema mismatch: ' + parsed.schema);
+  }
+  if (!Array.isArray(parsed.images) || parsed.images.length !== shots.length) {
+    fail('dossier holds ' + (parsed.images ? parsed.images.length : 0) + ' images, expected ' + shots.length);
+  }
+
+  const game = countEntries(join(outDir, 'game'));
+  const shotsOut = countEntries(join(outDir, 'screenshots'));
+  console.log('Verdeluz entry written to ' + outDir);
+  console.log('game/: ' + game.files + ' files, ' + game.bytes + ' bytes');
+  console.log('screenshots/: ' + shotsOut.files + ' files, ' + shotsOut.bytes + ' bytes');
+  console.log('dossier.json: ' + dossier.length + ' bytes');
+}
+
+main();

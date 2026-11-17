@@ -1,95 +1,101 @@
-// Keyboard and mouse input. Pointer lock is optional: arrow keys rotate the
-// camera too, so the whole game is playable keyboard-only.
+// Keyboard + mouse input. The game reads this state each tick; menus and
+// the pause screen also listen through the same key events.
 
-export class InputState {
+export class Input {
   constructor(canvas) {
-    this.canvas = canvas;
     this.keys = new Set();
-    this.pressed = new Set();
-    this.mouseDX = 0;
-    this.mouseDY = 0;
-    this.mouseDown = false;
-    this.mouseClicked = false;
-    this.locked = false;
-    this.enabled = false;
-    this.onFirstGesture = null;
-    this.gestureFired = false;
-    this.bindEvents();
+    this.pressed = new Set(); // edge-triggered, cleared each tick
+    this.mouse = { x: 0, y: 0, down: false, clicked: false, rightDown: false };
+    this.anyKey = false;
+    this.wheelDelta = 0;
+    this.canvas = canvas || document.getElementById('game');
+    const cv = this.canvas;
+    this._onKeyDown = (e) => {
+      if (e.repeat) return;
+      const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      this.keys.add(k);
+      this.pressed.add(k);
+      this.anyKey = true;
+      if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) e.preventDefault();
+    };
+    this._onKeyUp = (e) => {
+      const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      this.keys.delete(k);
+    };
+    this._onMove = (e) => {
+      const r = cv.getBoundingClientRect();
+      this.mouse.x = e.clientX - r.left;
+      this.mouse.y = e.clientY - r.top;
+    };
+    this._onDown = (e) => {
+      if (e.button === 0) { this.mouse.down = true; this.mouse.clicked = true; }
+      if (e.button === 2) this.mouse.rightDown = true;
+      this.anyKey = true;
+    };
+    this._onUp = (e) => {
+      if (e.button === 0) this.mouse.down = false;
+      if (e.button === 2) this.mouse.rightDown = false;
+    };
+    this._onBlur = () => { this.keys.clear(); this.mouse.down = false; };
+    this._onCtx = (e) => e.preventDefault();
+    this._onWheel = (e) => { this.wheelDelta += e.deltaY > 0 ? 1 : -1; };
+    window.addEventListener('keydown', this._onKeyDown);
+    window.addEventListener('keyup', this._onKeyUp);
+    window.addEventListener('blur', this._onBlur);
+    cv.addEventListener('mousemove', this._onMove);
+    cv.addEventListener('mousedown', this._onDown);
+    window.addEventListener('mouseup', this._onUp);
+    cv.addEventListener('contextmenu', this._onCtx);
+    cv.addEventListener('wheel', this._onWheel, { passive: true });
   }
 
-  bindEvents() {
-    window.addEventListener('keydown', (ev) => {
-      if (ev.repeat) return;
-      this.keys.add(ev.code);
-      this.pressed.add(ev.code);
-      this.fireGesture();
-      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(ev.code)) ev.preventDefault();
-    });
-    window.addEventListener('keyup', (ev) => { this.keys.delete(ev.code); });
-    window.addEventListener('blur', () => { this.keys.clear(); });
-    document.addEventListener('pointerlockchange', () => {
-      this.locked = document.pointerLockElement === this.canvas;
-    });
-    this.canvas.addEventListener('click', () => {
-      this.fireGesture();
-      if (this.enabled && !this.locked) {
-        try { this.canvas.requestPointerLock(); } catch (err) { /* lock unavailable */ }
-      }
-    });
-    document.addEventListener('mousemove', (ev) => {
-      if (!this.locked) return;
-      this.mouseDX += ev.movementX || 0;
-      this.mouseDY += ev.movementY || 0;
-    });
-    document.addEventListener('mousedown', (ev) => {
-      if (ev.button !== 0) return;
-      this.mouseDown = true;
-      this.mouseClicked = true;
-      this.fireGesture();
-    });
-    document.addEventListener('mouseup', (ev) => {
-      if (ev.button === 0) this.mouseDown = false;
-    });
+  mouseDown(button) {
+    return button === 2 ? this.mouse.rightDown : this.mouse.down;
   }
 
-  fireGesture() {
-    if (this.gestureFired) return;
-    this.gestureFired = true;
-    if (this.onFirstGesture) this.onFirstGesture();
+  consumeWheel() {
+    const d = this.wheelDelta;
+    this.wheelDelta = 0;
+    return d;
   }
 
-  consumeMouseDelta() {
-    const dx = this.mouseDX;
-    const dy = this.mouseDY;
-    this.mouseDX = 0;
-    this.mouseDY = 0;
-    return { dx, dy };
+  down(...names) {
+    return names.some((n) => this.keys.has(n));
   }
 
-  isDown(code) { return this.keys.has(code); }
-  wasPressed(code) { return this.pressed.has(code); }
-  consumeClick() {
-    const c = this.mouseClicked;
-    this.mouseClicked = false;
-    return c;
+  hit(...names) {
+    return names.some((n) => this.pressed.has(n));
   }
 
-  axisForward() {
-    let v = 0;
-    if (this.isDown('KeyW') || this.isDown('ArrowUp')) v += 1;
-    if (this.isDown('KeyS') || this.isDown('ArrowDown')) v -= 1;
-    return v;
+  // Movement axes, -1..1, from WASD or arrows.
+  axes() {
+    let x = 0, y = 0;
+    if (this.down('a', 'ArrowLeft')) x -= 1;
+    if (this.down('d', 'ArrowRight')) x += 1;
+    if (this.down('w', 'ArrowUp')) y -= 1;
+    if (this.down('s', 'ArrowDown')) y += 1;
+    if (x !== 0 && y !== 0) { x *= Math.SQRT1_2; y *= Math.SQRT1_2; }
+    return { x, y };
   }
 
-  axisStrafe() {
-    let v = 0;
-    if (this.isDown('KeyD')) v += 1;
-    if (this.isDown('KeyA')) v -= 1;
-    return v;
-  }
-
-  endFrame() {
+  endTick() {
     this.pressed.clear();
-    this.mouseClicked = false;
+    this.mouse.clicked = false;
+  }
+
+  // Alias: the main loop calls endFrame().
+  endFrame() {
+    this.endTick();
+  }
+
+  destroy() {
+    window.removeEventListener('keydown', this._onKeyDown);
+    window.removeEventListener('keyup', this._onKeyUp);
+    window.removeEventListener('blur', this._onBlur);
+    this.canvas.removeEventListener('mousemove', this._onMove);
+    this.canvas.removeEventListener('mousedown', this._onDown);
+    window.removeEventListener('mouseup', this._onUp);
+    this.canvas.removeEventListener('contextmenu', this._onCtx);
+    this.canvas.removeEventListener('wheel', this._onWheel);
   }
 }
