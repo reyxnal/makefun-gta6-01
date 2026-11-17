@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vela Mar — Countdown Getaway</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./styles.css">
+<script type="importmap">
+{"imports": {"three": "./vendor/three.module.min.js"}}
+</script>
+</head>
+<body>
+<canvas id="view" aria-label="Vela Mar open world game view"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="topLeft">
+    <div id="cashBox">$<span id="cash">0</span></div>
+    <div id="repBox">REP <span id="rep">0</span> &nbsp;•&nbsp; <span id="clock">22:00</span> &nbsp;•&nbsp; SUNRISE <span id="countdown">08:00:00</span></div>
+    <div id="tokenBox">FESTIVAL TOKENS <span id="tokens">0</span>/8</div>
+  </div>
+  <div id="topRight">
+    <div id="stars" aria-label="wanted level"></div>
+    <div id="wantedLabel">VELA MAR POLICE</div>
+  </div>
+  <div id="banner" class="hidden"><span id="bannerTitle"></span><span id="bannerSub"></span></div>
+  <div id="dialogue" class="hidden"><span id="dialogueName"></span><span id="dialogueText"></span><span id="dialogueHint">E / CLICK to continue</span></div>
+  <div id="feed"></div>
+  <div id="bottomLeft">
+    <div id="healthBar"><div id="healthFill"></div><span id="healthText">100</span></div>
+    <div id="ammoBox">PISTOL <span id="ammo">12</span> • MELEE [F] • RELOAD [R]</div>
+    <div id="vehicleBox" class="hidden"><span id="vehicleName"></span> • <span id="speed">0</span> KM/H • NITRO [SHIFT]</div>
+  </div>
+  <div id="bottomRight">
+    <canvas id="minimap" width="190" height="190"></canvas>
+    <div id="zoneLabel">MARINA LUZ</div>
+  </div>
+  <div id="help">WASD MOVE / DRIVE • MOUSE CAMERA • E ENTER / STEAL CAR • CLICK SHOOT • F PUNCH • SHIFT SPRINT / NITRO • M SOUND • P SAVE • ESC PAUSE</div>
+  <div id="interact" class="hidden"></div>
+</div>
+<div id="vignette" class="hidden"></div>
+<div id="fadeBlack"></div>
+
+<div id="startMenu" class="overlay">
+  <div class="panel">
+    <div class="kicker">LUMEN FEST • LAUNCH EVE • ONE NIGHT ONLY</div>
+    <h1>VELA MAR</h1>
+    <div class="subtitle">COUNTDOWN GETAWAY — 5 JOBS BEFORE SUNRISE</div>
+    <p class="story">Ria Calloway came to Vela Mar to work the festival lights. One borrowed car later, fixer Delia Voss owns her night: five jobs across four districts before sunrise — or the police get the footage first. Steal cars, outrun the heat, settle the dockside score, and make the last getaway count.</p>
+    <div class="controlsGrid">
+      <span>WASD</span><span>Walk / drive</span>
+      <span>MOUSE</span><span>Camera (click to lock)</span>
+      <span>E</span><span>Enter, steal &amp; exit cars</span>
+      <span>CLICK / F</span><span>Shoot / punch</span>
+      <span>SHIFT</span><span>Sprint / nitro</span>
+      <span>P / M</span><span>Save game / sound</span>
+    </div>
+    <button id="btnStart" class="bigBtn">START THE NIGHT</button>
+    <button id="btnContinue" class="bigBtn hidden">CONTINUE — SAVED GAME</button>
+    <div class="foot">An original open-world crime game. Own city, characters, story, art and music. No network needed — runs fully offline.</div>
+  </div>
+</div>
+
+<div id="pauseMenu" class="overlay hidden">
+  <div class="panel">
+    <h1>PAUSED</h1>
+    <div class="subtitle" id="pauseStats"></div>
+    <button id="btnResume" class="bigBtn">RESUME</button>
+    <button id="btnSave" class="bigBtn">SAVE GAME</button>
+    <button id="btnQuality" class="bigBtn">QUALITY: HIGH</button>
+    <button id="btnRestart" class="bigBtn">RESTART NIGHT</button>
+    <div class="foot">Progress saves to this browser only.</div>
+  </div>
+</div>
+
+<div id="bustedScreen" class="overlay hidden">
+  <div class="panel alert">
+    <h1>BUSTED</h1>
+    <p class="story">The Vela Mar police boxed you in. Delia paid the fine out of your cut — the night goes on, but the footage stays with her.</p>
+    <button id="btnBusted" class="bigBtn">BACK TO THE STREETS (−$150)</button>
+  </div>
+</div>
+
+<div id="wastedScreen" class="overlay hidden">
+  <div class="panel alert">
+    <h1>DOWN, NOT OUT</h1>
+    <p class="story">Ria wakes at the marina clinic with the festival still thumping. The jobs are still waiting.</p>
+    <button id="btnWasted" class="bigBtn">GET UP (−$100)</button>
+  </div>
+</div>
+
+<div id="splash" class="hidden"><div id="splashTitle"></div><div id="splashSub"></div></div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
