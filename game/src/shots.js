@@ -15,7 +15,9 @@ function placeTrafficNear(state, rng, cx, cy, n) {
     const y = cy + Math.sin(a) * range(rng, 180, 520);
     const p = nearestRoadPoint(state.city, x, y);
     if (!p) continue;
-    const car = makeCar(p.x, p.y, p.vertical ? Math.PI / 2 : 0, ['#d9392b', '#2b6fd9', '#e8a13a', '#37b24d'][i % 4], 'traffic');
+    const bodyType = i % 4 === 0 ? 'taxi' : i % 4 === 1 ? 'sport' : 'sedan';
+    const color = bodyType === 'taxi' ? '#f2c200' : ['#d9392b', '#2b6fd9', '#e8a13a', '#37b24d'][i % 4];
+    const car = makeCar(p.x, p.y, p.vertical ? Math.PI / 2 : 0, color, 'traffic', bodyType);
     car.speed = range(rng, 100, 220);
     state.traffic.push(car);
   }

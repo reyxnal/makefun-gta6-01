@@ -1,6 +1,6 @@
 // Solmar Heat — entities: the player on foot, cars, and the arcade driving
 // model. One job: move things and resolve collisions; AI lives elsewhere.
-import { PLAYER, CAR, clamp, dist, angleLerp, angleDiff } from './config.js';
+import { PLAYER, CAR, CAR_TYPES, clamp, dist, angleLerp, angleDiff } from './config.js';
 import { hitsBuilding, insideWorld } from './city.js';
 import { sfxCrash } from './audio.js';
 
@@ -13,10 +13,15 @@ export function makePlayer(x, y) {
   };
 }
 
-export function makeCar(x, y, angle, color, kind) {
+export function makeCar(x, y, angle, color, kind, bodyType) {
+  const type = CAR_TYPES[bodyType || 'sedan'] || CAR_TYPES.sedan;
   return {
     x, y, angle, speed: 0, color,
     kind: kind || 'traffic',
+    bodyType: bodyType || 'sedan',
+    accel: type.accel,
+    maxSpeed: type.maxSpeed,
+    turnRate: type.turnRate,
     length: CAR.length, width: CAR.width,
     driver: kind === 'player' ? 'player' : 'npc',
     hp: 100, brakeLight: false, siren: false,
@@ -41,9 +46,11 @@ export function moveOnFoot(player, dx, dy, dt, city) {
 // Arcade car physics: accelerate, steer (stronger at speed), collide with
 // buildings by testing the car's front and rear circles.
 export function driveCar(car, throttle, steer, dt, city, isPlayer) {
-  const maxFwd = CAR.maxSpeed;
+  const maxFwd = car.maxSpeed || CAR.maxSpeed;
   const maxRev = CAR.maxReverse;
-  if (throttle > 0) car.speed += CAR.accel * throttle * dt;
+  const accel = car.accel || CAR.accel;
+  const turnRate = car.turnRate || CAR.turnRate;
+  if (throttle > 0) car.speed += accel * throttle * dt;
   else if (throttle < 0) {
     if (car.speed > 5) car.speed -= CAR.brake * dt;
     else car.speed += CAR.reverseAccel * throttle * dt;
@@ -53,7 +60,7 @@ export function driveCar(car, throttle, steer, dt, city, isPlayer) {
   }
   car.speed = clamp(car.speed, -maxRev, maxFwd);
   const grip = clamp(Math.abs(car.speed) / 120, 0.25, 1);
-  car.angle += steer * CAR.turnRate * grip * dt * Math.sign(car.speed || 1);
+  car.angle += steer * turnRate * grip * dt * Math.sign(car.speed || 1);
   const nx = car.x + Math.cos(car.angle) * car.speed * dt;
   const ny = car.y + Math.sin(car.angle) * car.speed * dt;
   const crashed = carHitsBuilding(city, nx, ny, car.angle);

@@ -47,7 +47,7 @@ function spawnGuards(state, x, y) {
 }
 
 function spawnTargetCar(state, x, y) {
-  const car = makeCar(x, y, -Math.PI / 2, '#d9392b', 'traffic');
+  const car = makeCar(x, y, -Math.PI / 2, '#d9392b', 'traffic', 'sport');
   car.targetCar = true;
   car.speed = 0;
   state.traffic.push(car);

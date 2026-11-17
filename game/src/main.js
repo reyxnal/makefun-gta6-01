@@ -382,6 +382,16 @@ function runSelfTest() {
     drawWorld(ctx, state, v);
     return true;
   });
+  check('traffic-has-taxi-and-sport', () => {
+    const s = newGame(SEED, null);
+    const types = new Set(s.traffic.map((c) => c.bodyType));
+    return types.has('taxi') && types.has('sport') && s.traffic.every((c) => c.maxSpeed > 0 && c.accel > 0);
+  });
+  check('sport-is-fastest', () => {
+    const sport = makeCar(0, 0, 0, '#d9392b', 'traffic', 'sport');
+    const taxi = makeCar(0, 0, 0, '#f2c200', 'traffic', 'taxi');
+    return sport.maxSpeed > taxi.maxSpeed && sport.accel > taxi.accel;
+  });
   check('mission-chain-has-five', () => MISSIONS.length === 5);
   const passed = results.filter((r) => r.pass).length;
   const el = document.getElementById('selftest');

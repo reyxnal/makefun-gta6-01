@@ -16,7 +16,10 @@ export function spawnTraffic(city, count, rng, playerX, playerY) {
     const p = nearestRoadPoint(city, x, y);
     if (!p) continue;
     const angle = p.vertical ? (rng() < 0.5 ? Math.PI / 2 : -Math.PI / 2) : (rng() < 0.5 ? 0 : Math.PI);
-    const car = makeCar(p.x + (p.vertical ? range(rng, -18, 18) : 0), p.y + (p.vertical ? 0 : range(rng, -18, 18)), angle, pick(rng, PALETTE.carColors), 'traffic');
+    const roll = rng();
+    const bodyType = roll < 0.2 ? 'sport' : roll < 0.45 ? 'taxi' : 'sedan';
+    const color = bodyType === 'taxi' ? PALETTE.taxi : pick(rng, PALETTE.carColors);
+    const car = makeCar(p.x + (p.vertical ? range(rng, -18, 18) : 0), p.y + (p.vertical ? 0 : range(rng, -18, 18)), angle, color, 'traffic', bodyType);
     car.speed = range(rng, 120, 220);
     car.cruise = car.speed;
     cars.push(car);

@@ -42,6 +42,13 @@ export const CAR = {
   width: 26,
 };
 
+// Three body types: sedans cruise, sports are quick, taxis are slow but everywhere.
+export const CAR_TYPES = {
+  sedan: { accel: 520, maxSpeed: 560, turnRate: 2.6 },
+  sport: { accel: 700, maxSpeed: 680, turnRate: 3.0 },
+  taxi: { accel: 470, maxSpeed: 520, turnRate: 2.5 },
+};
+
 export const WANTED_DECAY_SECONDS = 26;
 export const MAX_WANTED = 5;
 

@@ -149,6 +149,18 @@ function drawCar(ctx, car, isPlayer) {
   ctx.fillStyle = 'rgba(255,255,255,0.75)';
   ctx.fillRect(car.length / 2 - 8, -car.width / 2 + 3, 4, 6);
   ctx.fillRect(car.length / 2 - 8, car.width / 2 - 9, 4, 6);
+  if (car.bodyType === 'taxi') {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(-6, -car.width / 2 - 2, 12, 5);
+    ctx.fillStyle = '#f2c200';
+    ctx.font = 'bold 5px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TAXI', 0, -car.width / 2 + 2);
+  }
+  if (car.bodyType === 'sport') {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(-car.length / 2 - 3, -car.width / 2 + 2, 4, car.width - 4);
+  }
   if (car.brakeLight) {
     ctx.fillStyle = '#ff2222';
     ctx.fillRect(-car.length / 2, -car.width / 2 + 2, 4, 6);

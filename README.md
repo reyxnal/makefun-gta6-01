@@ -17,7 +17,8 @@ in mission 1 turns out to be Kane's own ledger — from there the jobs become re
 - **Open world on foot and by car** — a 3200×2400 city with roads, parks, a marina, a beach,
   and the sea; walk, run, steal cars, and drive.
 - **Traffic and pedestrians** — cars cruise the roads and turn at intersections; pedestrians
-  stroll the sidewalks and flee from gunfire and speeding cars.
+  stroll the sidewalks and flee from gunfire and speeding cars. Three body types share the
+  roads: sedans, quick sports cars, and yellow taxis.
 - **Steal cars** — press E near any car to take it; stealing raises your wanted level.
 - **Wanted level + police** — 5 stars; police cars spawn, chase, and ram you, sirens wailing.
   Lay low and the heat cools off.
